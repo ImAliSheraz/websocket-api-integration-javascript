@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+
+<body>
+    <div id="droptown1">
+        <select name="currency" id="currency">
+
+        </select>
+    </div>
+    <div id="input1">
+        <input type="number" name="currency_value" id="currency_value" step=".01" onchange="tableListFunc()">
+    </div>
+    <div id="currency_exchnage_rates_box">
+        <table style="border: 1px solid #000;" id="exchnage_rates_table">
+            <tr>
+                <th>Currency</th>
+                <th>Value</th>
+            </tr>
+        </table>
+    </div>
+
+    <script type="application/javascript">
+        var ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+        ws.onopen = function (event) {
+            ws.send(JSON.stringify({ payout_currencies: 1 }));
+        };
+
+        function tableListFunc() {
+            let currency = document.getElementById("currency").value;
+            let currencyValue = document.getElementById("currency_value").value;
+            if (currencyValue !== '' && currency !== '') ws.send(JSON.stringify({ base_currency: currency, "exchange_rates": 1 }));
+        }
+
+        ws.onmessage = function (msg) {
+            var fullData = JSON.parse(msg.data);
+
+            if (fullData.msg_type == "payout_currencies") {
+                let currenciesList = $('#currency').empty();
+                currenciesListData = fullData.payout_currencies;
+                currenciesListData.forEach(element => {
+                    currenciesList.append('<option value=' + element + '>' + element + '</option>');
+                });
+            } else if (fullData.msg_type == "exchange_rates") {
+                let ratesList = $('#exchnage_rates_table tbody').empty();
+                let tableListData = fullData.exchange_rates.rates
+                var rows = "";
+
+                $.each(tableListData, function (key, val) {
+                    rows = "<tr><td>" + key + "</td><td>" + val + "</td></tr>";
+                    $(rows).appendTo("#exchnage_rates_table tbody");
+                });
+            }
+        };
+    </script>
+</body>
+
+</html>
